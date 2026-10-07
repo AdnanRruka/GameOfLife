@@ -1,0 +1,19 @@
+<Window x:Class="GameOfLife.WpfApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GameOfLife.WpfApp"
+        mc:Ignorable="d"
+        Title="Game of Life" Height="560" Width="660">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8">
+            <Button x:Name="StepButton" Content="Step" Width="80" Margin="0,0,8,0" Click="StepButton_Click" />
+            <Button x:Name="StartStopButton" Content="Start" Width="80" Margin="0,0,8,0" Click="StartStopButton_Click" />
+            <Button x:Name="ClearButton" Content="Clear" Width="80" Click="ClearButton_Click" />
+        </StackPanel>
+
+        <Canvas x:Name="GridCanvas" Margin="8" Background="White"
+                MouseLeftButtonDown="GridCanvas_MouseLeftButtonDown" />
+    </DockPanel>
+</Window>

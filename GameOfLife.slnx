@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="GameOfLife.Model/GameOfLife.Model.csproj" />
+  <Project Path="GameOfLife.Tests/GameOfLife.Tests.csproj" />
+  <Project Path="GameOfLife.WpfApp/GameOfLife.WpfApp.csproj" />
+</Solution>
