@@ -9,11 +9,11 @@ public class GridTests
     {
         var grid = new Grid(width: 5, height: 3);
 
-        for (var y = 0; y < 3; y++)
+        for (var row = 0; row < 3; row++)
         {
-            for (var x = 0; x < 5; x++)
+            for (var column = 0; column < 5; column++)
             {
-                Assert.False(grid.IsAlive(x, y));
+                Assert.False(grid.IsAlive(column, row));
             }
         }
     }
@@ -33,9 +33,9 @@ public class GridTests
     {
         var grid = new Grid(width: 5, height: 5);
 
-        var count = grid.CountLiveNeighbors(2, 2);
+        var liveNeighborCount = grid.CountLiveNeighbors(2, 2);
 
-        Assert.Equal(0, count);
+        Assert.Equal(0, liveNeighborCount);
     }
 
     [Fact]
@@ -46,9 +46,9 @@ public class GridTests
         grid.SetAlive(2, 1, true);
         grid.SetAlive(3, 3, true);
 
-        var count = grid.CountLiveNeighbors(2, 2);
+        var liveNeighborCount = grid.CountLiveNeighbors(2, 2);
 
-        Assert.Equal(3, count);
+        Assert.Equal(3, liveNeighborCount);
     }
 
     [Fact]
@@ -57,9 +57,9 @@ public class GridTests
         var grid = new Grid(width: 5, height: 5);
         grid.SetAlive(1, 0, true);
 
-        var count = grid.CountLiveNeighbors(0, 0);
+        var liveNeighborCount = grid.CountLiveNeighbors(0, 0);
 
-        Assert.Equal(1, count);
+        Assert.Equal(1, liveNeighborCount);
     }
 
     [Theory]
@@ -77,21 +77,21 @@ public class GridTests
     [InlineData(0, -1)]
     [InlineData(5, 0)]
     [InlineData(0, 3)]
-    public void SetAlive_CellOutsideGrid_ThrowsArgumentOutOfRangeException(int x, int y)
+    public void SetAlive_CellOutsideGrid_ThrowsArgumentOutOfRangeException(int column, int row)
     {
         var grid = new Grid(width: 5, height: 3);
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => grid.SetAlive(x, y, true));
+        Assert.Throws<ArgumentOutOfRangeException>(() => grid.SetAlive(column, row, true));
     }
 
     // Cell (2,2) in a 5x5 grid has the eight neighbors (1,1) (2,1) (3,1) (1,2) (3,2) (1,3) (2,3) (3,3).
-    private static Grid CreateGridWithAliveCells(params (int X, int Y)[] cells)
+    private static Grid CreateGridWithAliveCells(params (int Column, int Row)[] cells)
     {
         var grid = new Grid(width: 5, height: 5);
 
-        foreach (var (x, y) in cells)
+        foreach (var (column, row) in cells)
         {
-            grid.SetAlive(x, y, true);
+            grid.SetAlive(column, row, true);
         }
 
         return grid;
@@ -102,9 +102,9 @@ public class GridTests
     {
         var grid = CreateGridWithAliveCells((2, 2), (1, 1));
 
-        var next = grid.NextGeneration();
+        var nextGrid = grid.NextGeneration();
 
-        Assert.False(next.IsAlive(2, 2));
+        Assert.False(nextGrid.IsAlive(2, 2));
     }
 
     [Fact]
@@ -112,9 +112,9 @@ public class GridTests
     {
         var grid = CreateGridWithAliveCells((2, 2), (1, 1), (2, 1));
 
-        var next = grid.NextGeneration();
+        var nextGrid = grid.NextGeneration();
 
-        Assert.True(next.IsAlive(2, 2));
+        Assert.True(nextGrid.IsAlive(2, 2));
     }
 
     [Fact]
@@ -122,9 +122,9 @@ public class GridTests
     {
         var grid = CreateGridWithAliveCells((2, 2), (1, 1), (2, 1), (3, 1));
 
-        var next = grid.NextGeneration();
+        var nextGrid = grid.NextGeneration();
 
-        Assert.True(next.IsAlive(2, 2));
+        Assert.True(nextGrid.IsAlive(2, 2));
     }
 
     [Fact]
@@ -132,9 +132,9 @@ public class GridTests
     {
         var grid = CreateGridWithAliveCells((2, 2), (1, 1), (2, 1), (3, 1), (1, 2));
 
-        var next = grid.NextGeneration();
+        var nextGrid = grid.NextGeneration();
 
-        Assert.False(next.IsAlive(2, 2));
+        Assert.False(nextGrid.IsAlive(2, 2));
     }
 
     [Fact]
@@ -142,9 +142,9 @@ public class GridTests
     {
         var grid = CreateGridWithAliveCells((1, 1), (2, 1), (3, 1));
 
-        var next = grid.NextGeneration();
+        var nextGrid = grid.NextGeneration();
 
-        Assert.True(next.IsAlive(2, 2));
+        Assert.True(nextGrid.IsAlive(2, 2));
     }
 
     [Fact]
@@ -152,9 +152,9 @@ public class GridTests
     {
         var grid = CreateGridWithAliveCells((1, 1), (2, 1));
 
-        var next = grid.NextGeneration();
+        var nextGrid = grid.NextGeneration();
 
-        Assert.False(next.IsAlive(2, 2));
+        Assert.False(nextGrid.IsAlive(2, 2));
     }
 
     [Fact]

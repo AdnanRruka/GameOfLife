@@ -2,8 +2,7 @@ namespace GameOfLife.Model;
 
 public class Grid
 {
-    
-   private readonly bool[,] _cells;
+    private readonly bool[,] _cells;
 
     public int Width { get; }
     public int Height { get; }
@@ -12,86 +11,92 @@ public class Grid
     {
         if (width < 1)
         {
-        throw new ArgumentOutOfRangeException(nameof(width), "Width must be at least 1.");
+            throw new ArgumentOutOfRangeException(nameof(width), "Width must be at least 1.");
         }
 
         if (height < 1)
         {
-        throw new ArgumentOutOfRangeException(nameof(height), "Height must be at least 1.");
+            throw new ArgumentOutOfRangeException(nameof(height), "Height must be at least 1.");
         }
-        
+
         Width = width;
         Height = height;
         _cells = new bool[width, height];
     }
-    
 
-    public bool IsAlive(int x, int y)
+    public bool IsAlive(int column, int row)
     {
-        if (x < 0 || x >= Width || y < 0 || y >= Height)
+        if (IsOutsideGrid(column, row))
         {
             return false;
         }
-        return _cells[x, y];
+
+        return _cells[column, row];
     }
 
-    public void SetAlive(int x, int y, bool alive)
+    public void SetAlive(int column, int row, bool alive)
     {
-        if (x < 0 || x >= Width || y < 0 || y >= Height)
+        if (IsOutsideGrid(column, row))
         {
-            throw new ArgumentOutOfRangeException(nameof(x), "Cell is outside the grid.");
+            throw new ArgumentOutOfRangeException(nameof(column), "Cell is outside the grid.");
         }
 
-        _cells[x, y] = alive;
-
+        _cells[column, row] = alive;
     }
 
-    public  int CountLiveNeighbors(int x, int y)
+    public int CountLiveNeighbors(int column, int row)
     {
-        var count = 0;
-        for (var dy = -1; dy <= 1; dy++)
+        var liveNeighborCount = 0;
+
+        for (var rowOffset = -1; rowOffset <= 1; rowOffset++)
         {
-            for (var dx = -1; dx <= 1; dx++)
+            for (var columnOffset = -1; columnOffset <= 1; columnOffset++)
             {
-                if(dx == 0 && dy == 0)
+                if (columnOffset == 0 && rowOffset == 0)
                 {
                     continue;
-                    
                 }
 
-            if (IsAlive(x + dx, y + dy))
+                if (IsAlive(column + columnOffset, row + rowOffset))
                 {
-                   count++; 
-                } 
+                    liveNeighborCount++;
+                }
             }
-        
         }
-        return count;
+
+        return liveNeighborCount;
     }
 
-    public Grid  NextGeneration()
+    public Grid NextGeneration()
     {
-        var next =  new Grid(Width, Height);
+        var nextGrid = new Grid(Width, Height);
 
-        for (var y = 0; y < Height; y++)
+        for (var row = 0; row < Height; row++)
         {
-            for(  var x = 0; x < Width; x++)
+            for (var column = 0; column < Width; column++)
             {
-                var neighbors = CountLiveNeighbors(x, y);
-                var alive = IsAlive(x, y);
-                bool aliveNext;
-                if(alive)
+                var liveNeighborCount = CountLiveNeighbors(column, row);
+                var isAliveNow = IsAlive(column, row);
+                bool isAliveNext;
+
+                if (isAliveNow)
                 {
-                    aliveNext = neighbors == 2 || neighbors == 3;
+                    isAliveNext = liveNeighborCount == 2 || liveNeighborCount == 3;
                 }
                 else
                 {
-                    aliveNext = neighbors == 3;
+                    isAliveNext = liveNeighborCount == 3;
                 }
-                next.SetAlive(x, y, aliveNext);
+
+                nextGrid.SetAlive(column, row, isAliveNext);
             }
         }
 
-        return next;
+        return nextGrid;
+    }
+
+    private bool IsOutsideGrid(int column, int row)
+    {
+        return column < 0 || column >= Width || row < 0 || row >= Height;
     }
 }
