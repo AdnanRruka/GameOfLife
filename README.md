@@ -4,7 +4,7 @@ A WPF version of Conway's Game of Life, built as one of the tasks in the develop
 
 ## Requirements
 
-.NET 10 SDK on Windows. WPF does not run on other platforms.
+.NET 10 SDK. The WPF app needs Windows. The web app and tests run anywhere, including Docker.
 
 ## Run
 
@@ -40,3 +40,19 @@ Stop the simulation before drawing a pattern. A single cell has no neighbors and
 ## Code standards
 
 See [CODING_STANDARDS.md](CODING_STANDARDS.md).
+
+## Web version (any platform)
+
+```
+docker build -t gameoflife .
+docker run --rm -p 8080:8080 gameoflife
+```
+
+Open http://localhost:8080. It has the same Step / Start / Clear buttons and click-to-toggle cells as the WPF app. Without Docker: `dotnet run --project GameOfLife.WebApp`.
+
+Run the tests in Docker:
+
+```
+docker build --target test -t gameoflife-tests .
+docker run --rm gameoflife-tests
+```

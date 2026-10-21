@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game of Life</title>
+  <style>
+    :root {
+      --page: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --cell-dead: #f8fafc;
+      --grid-line: #e2e8f0;
+      --cell-alive: #4f46e5;
+      --button: #f1f5f9;
+      --button-hover: #e2e8f0;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --stop: #dc2626;
+      --stop-hover: #b91c1c;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page: #0b1120;
+        --card: #111a2e;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --border: #1e293b;
+        --cell-dead: #0f172a;
+        --grid-line: #1e293b;
+        --cell-alive: #818cf8;
+        --button: #1e293b;
+        --button-hover: #334155;
+        --accent: #6366f1;
+        --accent-hover: #818cf8;
+        --stop: #ef4444;
+        --stop-hover: #f87171;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: var(--page);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 664px;
+      padding: 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.02em; }
+    .hint { margin: 4px 0 20px; color: var(--muted); font-size: 0.9rem; }
+
+    .controls { display: flex; gap: 8px; margin-bottom: 16px; }
+
+    button {
+      flex: 0 0 auto;
+      width: 88px;
+      padding: 9px 0;
+      border: 0;
+      border-radius: 8px;
+      background: var(--button);
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 120ms;
+    }
+    button:hover { background: var(--button-hover); }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    button.primary { background: var(--accent); color: #fff; }
+    button.primary:hover { background: var(--accent-hover); }
+    button.primary.running { background: var(--stop); }
+    button.primary.running:hover { background: var(--stop-hover); }
+
+    canvas {
+      display: block;
+      width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 0 0 1px var(--border);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Game of Life</h1>
+    <p class="hint">Click cells to draw a pattern, then press Start.</p>
+
+    <div class="controls">
+      <button id="step">Step</button>
+      <button id="startStop" class="primary">Start</button>
+      <button id="clear">Clear</button>
+    </div>
+
+    <canvas id="board"></canvas>
+  </main>
+
+  <script>
+    const cellSize = 20;
+    const cellGap = 2;
+    const cellRadius = 4;
+    const intervalMilliseconds = 200;
+    const storageKey = "gameOfLifeRows";
+    const board = document.getElementById("board");
+    const context = board.getContext("2d");
+    const startStopButton = document.getElementById("startStop");
+    let rows = [];
+    let timer = null;
+    let stepping = false;
+
+    function emptyRows(width, height) {
+      return Array.from({ length: height }, () => new Array(width).fill(false));
+    }
+
+    function loadSavedRows(width, height) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey));
+        if (saved.length === height && saved.every((row) => row.length === width)) {
+          return saved;
+        }
+      } catch {
+        // No usable saved grid: start empty.
+      }
+      return emptyRows(width, height);
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(rows));
+      } catch {
+        // Saving is optional; the grid still works without it.
+      }
+    }
+
+    function color(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name);
+    }
+
+    function draw() {
+      const width = rows[0].length * cellSize;
+      const height = rows.length * cellSize;
+      const pixelRatio = window.devicePixelRatio || 1;
+
+      // Draw at the screen's pixel density so cells stay sharp.
+      board.width = width * pixelRatio;
+      board.height = height * pixelRatio;
+      board.style.aspectRatio = `${width} / ${height}`;
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+      context.fillStyle = color("--cell-dead");
+      context.fillRect(0, 0, width, height);
+
+      context.strokeStyle = color("--grid-line");
+      context.lineWidth = 1;
+      context.beginPath();
+      for (let column = 1; column < rows[0].length; column++) {
+        context.moveTo(column * cellSize + 0.5, 0);
+        context.lineTo(column * cellSize + 0.5, height);
+      }
+      for (let row = 1; row < rows.length; row++) {
+        context.moveTo(0, row * cellSize + 0.5);
+        context.lineTo(width, row * cellSize + 0.5);
+      }
+      context.stroke();
+
+      context.fillStyle = color("--cell-alive");
+      for (let row = 0; row < rows.length; row++) {
+        for (let column = 0; column < rows[row].length; column++) {
+          if (rows[row][column]) {
+            context.beginPath();
+            context.roundRect(
+              column * cellSize + cellGap,
+              row * cellSize + cellGap,
+              cellSize - cellGap * 2,
+              cellSize - cellGap * 2,
+              cellRadius);
+            context.fill();
+          }
+        }
+      }
+    }
+
+    async function step() {
+      if (stepping) {
+        return;
+      }
+
+      stepping = true;
+      try {
+        const response = await fetch("/api/step", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rows })
+        });
+        rows = (await response.json()).rows;
+        save();
+        draw();
+      } finally {
+        stepping = false;
+      }
+    }
+
+    function toggleTimer() {
+      if (timer === null) {
+        timer = setInterval(step, intervalMilliseconds);
+        startStopButton.textContent = "Stop";
+      } else {
+        clearInterval(timer);
+        timer = null;
+        startStopButton.textContent = "Start";
+      }
+      startStopButton.classList.toggle("running", timer !== null);
+    }
+
+    board.addEventListener("click", (event) => {
+      // The canvas can be scaled down on narrow screens, so map by its shown size.
+      const bounds = board.getBoundingClientRect();
+      const column = Math.floor((event.clientX - bounds.left) / bounds.width * rows[0].length);
+      const row = Math.floor((event.clientY - bounds.top) / bounds.height * rows.length);
+
+      if (row < 0 || row >= rows.length || column < 0 || column >= rows[0].length) {
+        return;
+      }
+
+      rows[row][column] = !rows[row][column];
+      save();
+      draw();
+    });
+
+    document.getElementById("step").addEventListener("click", step);
+    startStopButton.addEventListener("click", toggleTimer);
+    document.getElementById("clear").addEventListener("click", () => {
+      rows = emptyRows(rows[0].length, rows.length);
+      save();
+      draw();
+    });
+
+    // Redraw when the system switches between light and dark.
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      if (rows.length > 0) {
+        draw();
+      }
+    });
+
+    fetch("/api/size")
+      .then((response) => response.json())
+      .then((size) => {
+        rows = loadSavedRows(size.width, size.height);
+        draw();
+      });
+  </script>
+</body>
+</html>
